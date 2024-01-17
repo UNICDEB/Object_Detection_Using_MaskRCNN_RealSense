@@ -8,26 +8,21 @@ class MaskRCNN:
                                             "dnn/mask_rcnn_inception_v2_coco_2018_01_28.pbtxt")
         self.net.setPreferableBackend(cv2.dnn.DNN_BACKEND_CUDA)
         self.net.setPreferableTarget(cv2.dnn.DNN_TARGET_CUDA)
-
         # Generate random colors
         np.random.seed(2)
         self.colors = np.random.randint(0, 255, (90, 3))
-
         # Conf threshold
         self.detection_threshold = 0.7
         self.mask_threshold = 0.3
-
         self.classes = []
         with open("dnn/classes.txt", "r") as file_object:
             for class_name in file_object.readlines():
                 class_name = class_name.strip()
                 self.classes.append(class_name)
-
         self.obj_boxes = []
         self.obj_classes = []
         self.obj_centers = []
         self.obj_contours = []
-
         # Distances
         self.distances = []
 
@@ -35,19 +30,15 @@ class MaskRCNN:
     def detect_objects_mask(self, bgr_frame):
         blob = cv2.dnn.blobFromImage(bgr_frame, swapRB=True)
         self.net.setInput(blob)
-
         boxes, masks = self.net.forward(["detection_out_final", "detection_masks"])
-
         # Detect objects
         frame_height, frame_width, _ = bgr_frame.shape
         detection_count = boxes.shape[2]
-
         # Object Boxes
         self.obj_boxes = []
         self.obj_classes = []
         self.obj_centers = []
         self.obj_contours = []
-
         for i in range(detection_count):
             box = boxes[0, 0, i]
             class_id = box[1]
@@ -55,7 +46,6 @@ class MaskRCNN:
             color = self.colors[int(class_id)]
             if score < self.detection_threshold:
                 continue
-
             # Get box Coordinates
             x = int(box[3] * frame_width)
             y = int(box[4] * frame_height)
@@ -93,7 +83,6 @@ class MaskRCNN:
             roi_copy = np.zeros_like(roi)
 
             for cnt in contours:
-                # cv2.f(roi, [cnt], (int(color[0]), int(color[1]), int(color[2])))
                 cv2.drawContours(roi, [cnt], - 1, (int(color[0]), int(color[1]), int(color[2])), 3)
                 cv2.fillPoly(roi_copy, [cnt], (int(color[0]), int(color[1]), int(color[2])))
                 roi = cv2.addWeighted(roi, 1, roi_copy, 0.5, 0.0)
